@@ -331,7 +331,8 @@ impl TextComponent {
     pub fn encode(&self) -> Box<[u8]> {
         let mut buf = Vec::new();
         // Serialize the inner TextComponentBase directly to avoid newtype struct issues with NBT
-        pumpkin_nbt::serializer::to_bytes_unnamed(&self.0.clone().to_translated(), &mut buf)
+        // Do NOT call to_translated() - we want to preserve the translation keys for the client
+        pumpkin_nbt::serializer::to_bytes_unnamed(&self.0, &mut buf)
             .expect("Failed to serialize text component NBT for encode");
 
         buf.into_boxed_slice()
