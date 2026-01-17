@@ -1678,6 +1678,10 @@ impl World {
 
         player.send_active_effects().await;
         self.send_player_equipment(&player).await;
+
+        if let Some(server) = self.server.upgrade() {
+            crate::advancement::AdvancementTriggers::send_initial_advancements(&player, &server).await;
+        }
     }
 
     async fn send_player_equipment(&self, from: &Player) {

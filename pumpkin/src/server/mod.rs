@@ -1,3 +1,4 @@
+use crate::advancement::ServerAdvancementRegistry;
 use crate::block::registry::BlockRegistry;
 use crate::command::commands::default_dispatcher;
 use crate::command::commands::defaultgamemode::DefaultGamemode;
@@ -100,6 +101,8 @@ pub struct Server {
     /// Random unique Server ID used by Bedrock Edition
     pub server_guid: u64,
     tasks: TaskTracker,
+    /// The server's advancement registry containing all loaded advancements.
+    pub advancement_registry: RwLock<ServerAdvancementRegistry>,
 
     // world stuff which maybe should be put into a struct
     pub level_info: Arc<RwLock<LevelData>>,
@@ -204,6 +207,7 @@ impl Server {
             tasks: TaskTracker::new(),
             server_guid: rand::random(),
             mojang_public_keys: Mutex::new(Vec::new()),
+            advancement_registry: RwLock::new(ServerAdvancementRegistry::new()),
             world_info_writer: Arc::new(AnvilLevelInfo),
             level_info: level_info.clone(),
             _locker: Arc::new(locker),
@@ -261,6 +265,10 @@ impl Server {
             .expect("Nothing should hold a lock of worlds before server startup") =
             // vec![overworld.into()];
             vec![overworld.into(), nether.into(), end.into()];
+        
+        // Initialize advancement registry with vanilla advancements
+        server.advancement_registry.write().await.load_vanilla_advancements();
+        
         server
     }
 

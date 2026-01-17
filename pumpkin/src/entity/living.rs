@@ -801,10 +801,26 @@ impl LivingEntity {
                     EntityStatus::PlayDeathSoundOrAddProjectileHitParticles,
                 )
                 .await;
+            let killed_by_player = cause.as_ref().map(|c| c.get_entity().entity_type == &EntityType::PLAYER).unwrap_or(false);
             let params = LootContextParameters {
-                killed_by_player: cause.map(|c| c.get_entity().entity_type == &EntityType::PLAYER),
+                killed_by_player: Some(killed_by_player),
                 ..Default::default()
             };
+
+            if killed_by_player {
+                if let Some(attacker) = cause {
+                    let attacker_entity = attacker.get_entity();
+                    if let Some(server) = world.server.upgrade() {
+                        for player in server.get_all_players().await {
+                            if player.entity_id() == attacker_entity.entity_id {
+                                let entity_type_id = pumpkin_util::resource_location::ResourceLocation::vanilla(self.entity.entity_type.resource_name);
+                                player.trigger_player_killed_entity(&entity_type_id).await;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
 
             self.drop_loot(params).await;
             self.entity.pose.store(EntityPose::Dying);
@@ -1110,7 +1126,6 @@ impl EntityBase for LivingEntity {
                 if let Some(item) = item_in_use.as_ref()
                     && self.item_use_time.fetch_sub(1, Ordering::Relaxed) <= 0
                 {
-                    // Consume item
                     if let Some(food) = item.get_data_component::<FoodImpl>()
                         && let Some(player) = caller.get_player()
                     {

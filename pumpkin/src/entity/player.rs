@@ -88,6 +88,7 @@ use crate::server::Server;
 use crate::world::World;
 use crate::{PERMISSION_MANAGER, block};
 
+use crate::advancement::PlayerAdvancementTracker;
 use super::combat::{self, AttackType, player_attack_sound};
 use super::hunger::HungerManager;
 use super::item::ItemEntity;
@@ -395,6 +396,8 @@ pub struct Player {
     pub screen_handler_sync_id: AtomicU8,
     pub screen_handler_listener: Arc<dyn ScreenHandlerListener>,
     pub screen_handler_sync_handler: Arc<SyncHandler>,
+    /// The player's advancement progress tracker.
+    pub advancement_tracker: Mutex<PlayerAdvancementTracker>,
 }
 
 impl Player {
@@ -498,6 +501,7 @@ impl Player {
             screen_handler_sync_id: AtomicU8::new(0),
             screen_handler_listener: Arc::new(ScreenListener {}),
             screen_handler_sync_handler: Arc::new(SyncHandler::new()),
+            advancement_tracker: Mutex::new(PlayerAdvancementTracker::new()),
         }
     }
 
@@ -1295,6 +1299,17 @@ impl Player {
 
                 self.chunk_manager.lock().await.change_world(&current_world.level, &new_world.level);
 
+                if let Some(server) = new_world.server.upgrade() {
+                    let from_dim = ResourceLocation::from(current_world.dimension.minecraft_name);
+                    let to_dim = ResourceLocation::from(new_world.dimension.minecraft_name);
+                    crate::advancement::AdvancementTriggers::trigger_changed_dimension(
+                        self,
+                        &server,
+                        from_dim,
+                        to_dim,
+                    ).await;
+                }
+
                 let last_pos = self.living_entity.entity.last_pos.load();
                 let death_dimension = ResourceLocation::from(self.world().dimension.minecraft_name);
                 let death_location = BlockPos(Vector3::new(
@@ -1398,8 +1413,26 @@ impl Player {
 
     pub fn can_food_heal(&self) -> bool {
         let health = self.living_entity.health.load();
-        let max_health = 20.0; // TODO
+        let max_health = 20.0;
         health > 0.0 && health < max_health
+    }
+
+    pub async fn trigger_inventory_changed(self: &Arc<Self>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_inventory_changed(self, &server).await;
+        }
+    }
+
+    pub async fn trigger_consume_item(self: &Arc<Self>, item: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_consume_item(self, &server, item.clone()).await;
+        }
+    }
+
+    pub async fn trigger_player_killed_entity(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_player_killed_entity(self, &server, entity_type.clone()).await;
+        }
     }
 
     pub async fn add_exhaustion(&self, exhaustion: f32) {

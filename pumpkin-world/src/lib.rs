@@ -2,6 +2,7 @@ use generation::settings::GenerationSettings;
 use pumpkin_data::{BlockState, dimension::Dimension};
 use pumpkin_util::math::vector2::Vector2;
 
+pub mod advancement;
 pub mod biome;
 pub mod block;
 pub mod chunk;

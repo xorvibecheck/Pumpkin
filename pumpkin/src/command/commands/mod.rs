@@ -8,6 +8,7 @@ use crate::PERMISSION_REGISTRY;
 
 use super::dispatcher::CommandDispatcher;
 
+mod advancement;
 mod ban;
 mod banip;
 mod banlist;
@@ -122,6 +123,10 @@ pub async fn default_dispatcher(basic_config: &BasicConfiguration) -> CommandDis
         "minecraft:command.setworldspawn",
     );
     dispatcher.register(data::init_command_tree(), "minecraft:command.data");
+    dispatcher.register(
+        advancement::init_command_tree(),
+        "minecraft:command.advancement",
+    );
     // Three
     dispatcher.register(op::init_command_tree(), "minecraft:command.op");
     dispatcher.register(deop::init_command_tree(), "minecraft:command.deop");

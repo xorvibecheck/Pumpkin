@@ -83,6 +83,7 @@ impl CommandExecutor for Executor {
                     }
                     remaining -= take;
                 }
+                target.trigger_inventory_changed().await;
             }
             let msg = if targets.len() == 1 {
                 TextComponent::translate(

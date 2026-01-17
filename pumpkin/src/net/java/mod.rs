@@ -10,7 +10,8 @@ use pumpkin_protocol::java::server::play::{
     SClientInformationPlay, SClientTickEnd, SCloseContainer, SCommandSuggestion, SConfirmTeleport,
     SCookieResponse as SPCookieResponse, SCustomPayload, SInteract, SKeepAlive, SPickItemFromBlock,
     SPlayPingRequest, SPlayerAbilities, SPlayerAction, SPlayerCommand, SPlayerInput, SPlayerLoaded,
-    SPlayerPosition, SPlayerPositionRotation, SPlayerRotation, SPlayerSession, SSetCommandBlock,
+    SPlayerPosition, SPlayerPositionRotation, SPlayerRotation, SPlayerSession, SSeenAdvancements,
+    SSetCommandBlock,
     SSetCreativeSlot, SSetHeldItem, SSetPlayerGround, SSwingArm, SUpdateSign, SUseItem, SUseItemOn,
 };
 use pumpkin_protocol::{
@@ -666,6 +667,10 @@ impl JavaClient {
             }
             SCustomPayload::PACKET_ID => {
                 // TODO: this fixes Failed to handle player packet id for now
+            }
+            SSeenAdvancements::PACKET_ID => {
+                self.handle_seen_advancements(player, SSeenAdvancements::read(payload)?)
+                    .await;
             }
             _ => {
                 log::warn!("Failed to handle player packet id {}", packet.id);

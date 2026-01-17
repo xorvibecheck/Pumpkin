@@ -38,8 +38,9 @@ use pumpkin_macros::send_cancellable;
 use pumpkin_protocol::codec::var_int::VarInt;
 use pumpkin_protocol::java::client::play::{
     CBlockUpdate, CCommandSuggestions, CEntityPositionSync, CHeadRot, COpenSignEditor,
-    CPingResponse, CPlayerInfoUpdate, CPlayerPosition, CSetSelectedSlot, CSystemChatMessage,
-    CUpdateEntityPos, CUpdateEntityPosRot, CUpdateEntityRot, InitChat, PlayerAction,
+    CPingResponse, CPlayerInfoUpdate, CPlayerPosition, CSelectAdvancementTab, CSetSelectedSlot,
+    CSystemChatMessage, CUpdateEntityPos, CUpdateEntityPosRot, CUpdateEntityRot, InitChat,
+    PlayerAction,
 };
 use pumpkin_protocol::java::server::play::{
     Action, ActionType, CommandBlockMode, FLAG_ON_GROUND, SChangeGameMode, SChatCommand,
@@ -47,8 +48,8 @@ use pumpkin_protocol::java::server::play::{
     SCommandSuggestion, SConfirmTeleport, SCookieResponse as SPCookieResponse, SInteract,
     SKeepAlive, SPickItemFromBlock, SPlayPingRequest, SPlayerAbilities, SPlayerAction,
     SPlayerCommand, SPlayerInput, SPlayerPosition, SPlayerPositionRotation, SPlayerRotation,
-    SPlayerSession, SSetCommandBlock, SSetCreativeSlot, SSetHeldItem, SSetPlayerGround, SSwingArm,
-    SUpdateSign, SUseItem, SUseItemOn, Status,
+    SPlayerSession, SSeenAdvancements, SeenAdvancementsAction, SSetCommandBlock, SSetCreativeSlot,
+    SSetHeldItem, SSetPlayerGround, SSwingArm, SUpdateSign, SUseItem, SUseItemOn, Status,
 };
 use pumpkin_util::math::vector3::Vector3;
 use pumpkin_util::math::{polynomial_rolling_hash, position::BlockPos, wrap_degrees};
@@ -2055,5 +2056,31 @@ impl JavaClient {
     pub async fn send_sign_packet(&self, block_position: BlockPos, is_front_text: bool) {
         self.enqueue_packet(&COpenSignEditor::new(block_position, is_front_text))
             .await;
+    }
+
+    /// Handles the seen advancements packet from the client.
+    ///
+    /// This is sent when the player opens an advancement tab or closes the advancement screen.
+    pub async fn handle_seen_advancements(&self, player: &Arc<Player>, packet: SSeenAdvancements) {
+        match packet.action {
+            SeenAdvancementsAction::OpenedTab => {
+                if let Some(tab_id) = packet.tab_id {
+                    // Update the player's current tab
+                    {
+                        let mut tracker = player.advancement_tracker.lock().await;
+                        tracker.set_current_tab(Some(tab_id.clone()));
+                    }
+
+                    // Send back the tab selection to confirm
+                    self.enqueue_packet(&CSelectAdvancementTab::new(Some(tab_id)))
+                        .await;
+                }
+            }
+            SeenAdvancementsAction::ClosedScreen => {
+                // Clear the current tab when the screen is closed
+                let mut tracker = player.advancement_tracker.lock().await;
+                tracker.set_current_tab(None);
+            }
+        }
     }
 }
