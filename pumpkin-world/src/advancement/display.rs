@@ -43,6 +43,7 @@ fn default_true() -> bool {
 impl AdvancementDisplay {
     /// Creates a new advancement display with the given properties.
     #[must_use]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         icon: AdvancementIcon,
         title: TextComponent,

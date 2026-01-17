@@ -3,6 +3,7 @@
 //! This module contains all the data structures and logic for the advancement system,
 //! including advancement definitions, display information, progress tracking, and criteria.
 
+#[allow(clippy::module_inception)]
 mod advancement;
 mod criterion;
 mod display;

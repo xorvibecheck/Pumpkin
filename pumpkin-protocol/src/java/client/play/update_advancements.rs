@@ -214,23 +214,23 @@ pub struct AdvancementDisplay {
 
 impl AdvancementDisplay {
     fn write(&self, write: &mut impl Write) -> Result<(), WritingError> {
-        // Title
+        // Title (as text component)
         write.write_slice(&self.title.encode())?;
-        // Description
+        // Description (as text component)
         write.write_slice(&self.description.encode())?;
-        // Icon (item stack)
+        // Icon (item stack / slot)
         self.icon.write(write)?;
-        // Frame type
+        // Frame type (VarInt)
         write.write_var_int(&VarInt(self.frame as i32))?;
-        // Flags
-        write.write_i32_be(self.flags)?;
+        // Flags (VarInt, not i32!)
+        write.write_var_int(&VarInt(self.flags))?;
         // Background (only if flag bit 0 is set)
         if self.flags & 0x01 != 0 {
             if let Some(ref bg) = self.background {
                 write.write_resource_location(bg)?;
             }
         }
-        // Position
+        // Position (floats)
         write.write_f32_be(self.x)?;
         write.write_f32_be(self.y)
     }

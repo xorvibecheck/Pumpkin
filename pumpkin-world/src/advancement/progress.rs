@@ -28,7 +28,7 @@ impl AdvancementProgress {
     /// Sets up criterion entries for all required criteria.
     pub fn init(&mut self, requirements: &AdvancementRequirements) {
         for name in requirements.get_names() {
-            self.criteria.entry(name).or_insert_with(CriterionProgress::new);
+            self.criteria.entry(name).or_default();
         }
         self.update_done(requirements);
     }
@@ -53,12 +53,12 @@ impl AdvancementProgress {
     /// Revokes a criterion, marking it as not obtained.
     /// Returns `true` if the criterion was previously obtained.
     pub fn revoke_criterion(&mut self, criterion: &str) -> bool {
-        if let Some(progress) = self.criteria.get_mut(criterion) {
-            if progress.is_obtained() {
-                progress.reset();
-                self.done = false;
-                return true;
-            }
+        if let Some(progress) = self.criteria.get_mut(criterion)
+            && progress.is_obtained()
+        {
+            progress.reset();
+            self.done = false;
+            return true;
         }
         false
     }

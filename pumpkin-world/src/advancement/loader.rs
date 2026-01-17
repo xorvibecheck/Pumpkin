@@ -84,7 +84,7 @@ pub fn parse_advancement(id: &str, raw: RawAdvancement) -> AdvancementEntry {
     let parent = raw.parent.map(|p| parse_resource_location(&p));
     
     // Parse display
-    let display = raw.display.map(|d| parse_display(d));
+    let display = raw.display.map(parse_display);
     
     // Get criteria keys for requirements before consuming criteria
     let criteria_keys: Vec<String> = raw.criteria.keys().cloned().collect();
@@ -93,7 +93,7 @@ pub fn parse_advancement(id: &str, raw: RawAdvancement) -> AdvancementEntry {
     let criteria: HashMap<String, AdvancementCriterion> = raw.criteria.into_iter()
         .map(|(name, crit)| {
             let trigger = parse_resource_location(&crit.trigger);
-            let conditions = crit.conditions.map(|c| parse_conditions(c));
+            let conditions = crit.conditions.map(parse_conditions);
             (name, AdvancementCriterion {
                 trigger,
                 conditions,
