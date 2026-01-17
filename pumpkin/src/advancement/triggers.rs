@@ -454,16 +454,22 @@ impl AdvancementTriggers {
             Vec::new()
         };
         
-        let progress = tracker.to_progress_mappings();
+        // On reset, send progress for all advancements that player has interacted with
+        let progress: Vec<pumpkin_protocol::java::client::play::AdvancementProgressMapping> = 
+            tracker.to_progress_mappings();
         
         drop(tracker);
         drop(registry);
+        
+        log::debug!("Sending advancement update: reset={}, advancements={}, progress={}", 
+            reset, advancements.len(), progress.len());
         
         let packet = pumpkin_protocol::java::client::play::CUpdateAdvancements::new(
             reset,
             &advancements,
             &[],
             &progress,
+            !reset, // Don't show toast on initial reset, show on subsequent updates
         );
         
         player.client.enqueue_packet(&packet).await;

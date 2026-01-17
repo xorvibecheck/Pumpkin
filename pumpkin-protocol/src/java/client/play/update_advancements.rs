@@ -20,6 +20,8 @@ pub struct CUpdateAdvancements<'a> {
     pub identifiers_to_remove: &'a [ResourceLocation],
     /// Progress updates for advancements.
     pub progress: &'a [AdvancementProgressMapping],
+    /// Whether to show toast notifications for advancements.
+    pub show_toast: bool,
 }
 
 impl<'a> CUpdateAdvancements<'a> {
@@ -30,12 +32,14 @@ impl<'a> CUpdateAdvancements<'a> {
         advancements: &'a [AdvancementMapping],
         identifiers_to_remove: &'a [ResourceLocation],
         progress: &'a [AdvancementProgressMapping],
+        show_toast: bool,
     ) -> Self {
         Self {
             reset,
             advancements,
             identifiers_to_remove,
             progress,
+            show_toast,
         }
     }
 
@@ -50,6 +54,7 @@ impl<'a> CUpdateAdvancements<'a> {
             advancements,
             identifiers_to_remove: &[],
             progress,
+            show_toast: false, // Don't show toast on initial reset
         }
     }
 
@@ -64,6 +69,7 @@ impl<'a> CUpdateAdvancements<'a> {
             advancements,
             identifiers_to_remove: &[],
             progress,
+            show_toast: true,
         }
     }
 }
@@ -72,28 +78,29 @@ impl ClientPacket for CUpdateAdvancements<'_> {
     fn write_packet_data(&self, write: impl Write) -> Result<(), WritingError> {
         let mut write = write;
 
-        // Reset flag
+        // Reset/clear flag
         write.write_bool(self.reset)?;
 
-        // Advancements to add/update
+        // Advancements to add/update (toEarn)
         write.write_var_int(&VarInt(self.advancements.len() as i32))?;
         for advancement in self.advancements {
             advancement.write(&mut write)?;
         }
 
-        // Advancements to remove
+        // Advancements to remove (toRemove)
         write.write_var_int(&VarInt(self.identifiers_to_remove.len() as i32))?;
         for id in self.identifiers_to_remove {
             write.write_resource_location(id)?;
         }
 
-        // Progress updates
+        // Progress updates (toSetProgress) - written as map
         write.write_var_int(&VarInt(self.progress.len() as i32))?;
         for progress in self.progress {
             progress.write(&mut write)?;
         }
 
-        Ok(())
+        // Show toast flag
+        write.write_bool(self.show_toast)
     }
 }
 
@@ -214,21 +221,21 @@ pub struct AdvancementDisplay {
 
 impl AdvancementDisplay {
     fn write(&self, write: &mut impl Write) -> Result<(), WritingError> {
-        // Title (as text component)
+        // Title (as text component NBT)
         write.write_slice(&self.title.encode())?;
-        // Description (as text component)
+        // Description (as text component NBT)
         write.write_slice(&self.description.encode())?;
-        // Icon (item stack / slot)
+        // Icon (ItemStack / Slot)
         self.icon.write(write)?;
-        // Frame type (VarInt)
+        // Frame type (VarInt enum ordinal)
         write.write_var_int(&VarInt(self.frame as i32))?;
-        // Flags (VarInt, not i32!)
-        write.write_var_int(&VarInt(self.flags))?;
+        // Flags (i32, NOT VarInt!) - vanilla uses writeInt
+        write.write_i32_be(self.flags)?;
         // Background (only if flag bit 0 is set)
-        if self.flags & 0x01 != 0 {
-            if let Some(ref bg) = self.background {
-                write.write_resource_location(bg)?;
-            }
+        if self.flags & 0x01 != 0
+            && let Some(ref bg) = self.background
+        {
+            write.write_resource_location(bg)?;
         }
         // Position (floats)
         write.write_f32_be(self.x)?;
@@ -236,17 +243,13 @@ impl AdvancementDisplay {
     }
 }
 
-/// Icon for an advancement (simplified item representation).
+/// Icon for an advancement (slot/item representation).
 #[derive(Debug, Clone)]
 pub struct AdvancementIcon {
     /// The item count (0 for empty).
     pub count: i32,
     /// The item ID if count > 0.
     pub item_id: Option<VarInt>,
-    /// Number of components to add.
-    pub components_to_add: i32,
-    /// Number of components to remove.
-    pub components_to_remove: i32,
 }
 
 impl AdvancementIcon {
@@ -256,8 +259,6 @@ impl AdvancementIcon {
         Self {
             count: 0,
             item_id: None,
-            components_to_add: 0,
-            components_to_remove: 0,
         }
     }
 
@@ -267,20 +268,29 @@ impl AdvancementIcon {
         Self {
             count: 1,
             item_id: Some(VarInt(item_id)),
-            components_to_add: 0,
-            components_to_remove: 0,
+        }
+    }
+
+    /// Creates an icon with a specific count.
+    #[must_use]
+    pub fn item_with_count(item_id: i32, count: i32) -> Self {
+        Self {
+            count,
+            item_id: Some(VarInt(item_id)),
         }
     }
 
     fn write(&self, write: &mut impl Write) -> Result<(), WritingError> {
+        // Write item count as VarInt
         write.write_var_int(&VarInt(self.count))?;
         if self.count > 0 {
+            // Write item ID
             if let Some(ref item_id) = self.item_id {
                 write.write_var_int(item_id)?;
             }
-            write.write_var_int(&VarInt(self.components_to_add))?;
-            write.write_var_int(&VarInt(self.components_to_remove))?;
-            // TODO: Write actual component data if needed
+            // Write 0 components to add and 0 components to remove
+            write.write_var_int(&VarInt(0))?; // components_to_add
+            write.write_var_int(&VarInt(0))?; // components_to_remove
         }
         Ok(())
     }
