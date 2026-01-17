@@ -63,6 +63,10 @@ impl ItemBehaviour for SpawnEggItem {
                 // Broadcast the new mob to all players
                 world.spawn_entity(mob).await;
                 item.decrement_unless_creative(player.gamemode.load(), 1);
+
+                // Trigger summoned_entity advancement
+                let entity_resource = pumpkin_util::resource_location::ResourceLocation::vanilla(entity_type.resource_name);
+                player.trigger_summoned_entity(&entity_resource).await;
                 // TODO: send/configure additional commands/data based on the type of entity (horse, slime, etc)
             }
         })

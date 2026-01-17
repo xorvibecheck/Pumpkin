@@ -187,6 +187,10 @@ impl ItemBehaviour for EmptyBucketItem {
                 &Item::WATER_BUCKET
             };
 
+            // Trigger filled_bucket advancement
+            let item_resource = pumpkin_util::resource_location::ResourceLocation::vanilla(item.name);
+            player.trigger_filled_bucket(&item_resource).await;
+
             if player.gamemode.load() == GameMode::Creative {
                 //Check if player already has the item in their inventory
                 for i in 0..player.inventory.main_inventory.len() {

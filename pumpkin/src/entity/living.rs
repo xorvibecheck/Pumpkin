@@ -1072,6 +1072,32 @@ impl EntityBase for LivingEntity {
                     .await;
             }
 
+            // Trigger advancement hooks for combat
+            if let Some(server) = world.server.upgrade() {
+                // If cause is a player, trigger player_hurt_entity
+                if let Some(attacker) = cause {
+                    if let Some(attacker_player) = attacker.get_player() {
+                        let entity_type_id = pumpkin_util::resource_location::ResourceLocation::vanilla(self.entity.entity_type.resource_name);
+                        crate::advancement::AdvancementTriggers::trigger_player_hurt_entity(
+                            attacker_player,
+                            &server,
+                            entity_type_id,
+                        ).await;
+                    }
+                }
+                // If self is a player, trigger entity_hurt_player
+                if let Some(victim_player) = caller.get_player() {
+                    if let Some(attacker) = cause {
+                        let entity_type_id = pumpkin_util::resource_location::ResourceLocation::vanilla(attacker.get_entity().entity_type.resource_name);
+                        crate::advancement::AdvancementTriggers::trigger_entity_hurt_player(
+                            victim_player,
+                            &server,
+                            entity_type_id,
+                        ).await;
+                    }
+                }
+            }
+
             self.entity
                 .world
                 .broadcast_packet_all(&CDamageEvent::new(

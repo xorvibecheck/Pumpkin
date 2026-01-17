@@ -1472,6 +1472,157 @@ impl Player {
         }
     }
 
+    pub async fn trigger_placed_block(self: &Arc<Self>, block: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_placed_block(self, &server, block.clone()).await;
+        }
+    }
+
+    pub async fn trigger_item_used_on_block(self: &Arc<Self>, item: &ResourceLocation, block: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_item_used_on_block(self, &server, item.clone(), block.clone()).await;
+        }
+    }
+
+    pub async fn trigger_recipe_crafted(self: &Arc<Self>, recipe_id: &str) {
+        if let Some(server) = self.world().server.upgrade() {
+            let recipe = ResourceLocation::vanilla(recipe_id);
+            crate::advancement::AdvancementTriggers::trigger_recipe_crafted(self, &server, recipe).await;
+        }
+    }
+
+    pub async fn trigger_player_hurt_entity(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_player_hurt_entity(self, &server, entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_entity_hurt_player(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_entity_hurt_player(self, &server, entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_enchanted_item(self: &Arc<Self>, item: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_enchanted_item(self, &server, item.clone()).await;
+        }
+    }
+
+    pub async fn trigger_filled_bucket(self: &Arc<Self>, item: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_filled_bucket(self, &server, item.clone()).await;
+        }
+    }
+
+    pub async fn trigger_fishing_rod_hooked(self: &Arc<Self>, item: Option<&ResourceLocation>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_fishing_rod_hooked(self, &server, item.cloned()).await;
+        }
+    }
+
+    pub async fn trigger_tame_animal(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_tame_animal(self, &server, entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_bred_animals(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_bred_animals(self, &server, entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_villager_trade(self: &Arc<Self>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_villager_trade(self, &server, None).await;
+        }
+    }
+
+    pub async fn trigger_used_totem(self: &Arc<Self>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_used_totem(self, &server).await;
+        }
+    }
+
+    pub async fn trigger_enter_block(self: &Arc<Self>, block: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_enter_block(self, &server, block.clone()).await;
+        }
+    }
+
+    pub async fn trigger_shot_crossbow(self: &Arc<Self>, item: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_shot_crossbow(self, &server, item.clone()).await;
+        }
+    }
+
+    pub async fn trigger_summoned_entity(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_summoned_entity(self, &server, entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_player_interacted_with_entity(self: &Arc<Self>, item: &ResourceLocation, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_player_interacted_with_entity(self, &server, item.clone(), entity_type.clone()).await;
+        }
+    }
+
+    pub async fn trigger_cured_zombie_villager(self: &Arc<Self>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_cured_zombie_villager(self, &server).await;
+        }
+    }
+
+    pub async fn trigger_construct_beacon(self: &Arc<Self>, level: i32) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_construct_beacon(self, &server, level).await;
+        }
+    }
+
+    pub async fn trigger_slide_down_block(self: &Arc<Self>, block: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_slide_down_block(self, &server, block.clone()).await;
+        }
+    }
+
+    pub async fn trigger_target_hit(self: &Arc<Self>, signal_strength: i32) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_target_hit(self, &server, signal_strength).await;
+        }
+    }
+
+    pub async fn trigger_location(self: &Arc<Self>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_location(self, &server).await;
+        }
+    }
+
+    pub async fn trigger_brewed_potion(self: &Arc<Self>, potion: Option<&str>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_brewed_potion(self, &server, potion.map(String::from)).await;
+        }
+    }
+
+    pub async fn trigger_effects_changed(self: &Arc<Self>, effects: std::collections::HashSet<String>) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_effects_changed(self, &server, effects).await;
+        }
+    }
+
+    pub async fn trigger_fall_from_height(self: &Arc<Self>, distance: f64) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_fall_from_height(self, &server, distance).await;
+        }
+    }
+
+    pub async fn trigger_started_riding(self: &Arc<Self>, entity_type: &ResourceLocation) {
+        if let Some(server) = self.world().server.upgrade() {
+            crate::advancement::AdvancementTriggers::trigger_started_riding(self, &server, entity_type.clone()).await;
+        }
+    }
+
     pub async fn add_exhaustion(&self, exhaustion: f32) {
         if self.abilities.lock().await.invulnerable {
             return;

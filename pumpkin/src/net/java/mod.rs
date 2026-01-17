@@ -10,8 +10,8 @@ use pumpkin_protocol::java::server::play::{
     SClientInformationPlay, SClientTickEnd, SCloseContainer, SCommandSuggestion, SConfirmTeleport,
     SCookieResponse as SPCookieResponse, SCustomPayload, SInteract, SKeepAlive, SPickItemFromBlock,
     SPlayPingRequest, SPlayerAbilities, SPlayerAction, SPlayerCommand, SPlayerInput, SPlayerLoaded,
-    SPlayerPosition, SPlayerPositionRotation, SPlayerRotation, SPlayerSession, SSeenAdvancements,
-    SSetCommandBlock,
+    SPlayerPosition, SPlayerPositionRotation, SPlayerRotation, SPlayerSession,
+    SPlaceRecipe, SRecipeBookChangeSettings, SRecipeBookSeenRecipe, SSeenAdvancements, SSetCommandBlock,
     SSetCreativeSlot, SSetHeldItem, SSetPlayerGround, SSwingArm, SUpdateSign, SUseItem, SUseItemOn,
 };
 use pumpkin_protocol::{
@@ -670,6 +670,18 @@ impl JavaClient {
             }
             SSeenAdvancements::PACKET_ID => {
                 self.handle_seen_advancements(player, SSeenAdvancements::read(payload)?)
+                    .await;
+            }
+            SPlaceRecipe::PACKET_ID => {
+                self.handle_place_recipe(player, SPlaceRecipe::read(payload)?)
+                    .await;
+            }
+            SRecipeBookChangeSettings::PACKET_ID => {
+                self.handle_recipe_book_change_settings(player, SRecipeBookChangeSettings::read(payload)?)
+                    .await;
+            }
+            SRecipeBookSeenRecipe::PACKET_ID => {
+                self.handle_recipe_book_seen_recipe(player, SRecipeBookSeenRecipe::read(payload)?)
                     .await;
             }
             _ => {

@@ -323,6 +323,9 @@ impl BlockBehaviour for BedBlock {
             args.player.sleep(bed_head_pos).await;
             Self::set_occupied(true, args.world, args.block, args.position, state_id).await;
 
+            // Trigger slept_in_bed advancement
+            crate::advancement::AdvancementTriggers::trigger_slept_in_bed(&args.player, args.server).await;
+
             BlockActionResult::SuccessServer
         })
     }

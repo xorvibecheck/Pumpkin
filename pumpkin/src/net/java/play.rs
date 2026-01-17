@@ -48,8 +48,9 @@ use pumpkin_protocol::java::server::play::{
     SCommandSuggestion, SConfirmTeleport, SCookieResponse as SPCookieResponse, SInteract,
     SKeepAlive, SPickItemFromBlock, SPlayPingRequest, SPlayerAbilities, SPlayerAction,
     SPlayerCommand, SPlayerInput, SPlayerPosition, SPlayerPositionRotation, SPlayerRotation,
-    SPlayerSession, SSeenAdvancements, SeenAdvancementsAction, SSetCommandBlock, SSetCreativeSlot,
-    SSetHeldItem, SSetPlayerGround, SSwingArm, SUpdateSign, SUseItem, SUseItemOn, Status,
+    SPlaceRecipe, SPlayerSession, SRecipeBookChangeSettings, SRecipeBookSeenRecipe, SSeenAdvancements,
+    SeenAdvancementsAction, SSetCommandBlock, SSetCreativeSlot, SSetHeldItem, SSetPlayerGround,
+    SSwingArm, SUpdateSign, SUseItem, SUseItemOn, Status,
 };
 use pumpkin_util::math::vector3::Vector3;
 use pumpkin_util::math::{polynomial_rolling_hash, position::BlockPos, wrap_degrees};
@@ -2045,8 +2046,12 @@ impl JavaClient {
 
         server
             .block_registry
-            .player_placed(world, block, new_state, &final_block_pos, face, player)
+            .player_placed(world, block, new_state, &final_block_pos, face, player.clone())
             .await;
+
+        // Trigger placed_block advancement
+        let block_resource = pumpkin_util::resource_location::ResourceLocation::vanilla(block.name);
+        player.trigger_placed_block(&block_resource).await;
 
         // The block was placed successfully, so decrement their inventory
         Ok(true)
@@ -2082,5 +2087,60 @@ impl JavaClient {
                 tracker.set_current_tab(None);
             }
         }
+    }
+
+    /// Handles when a player clicks on a recipe in the recipe book to place it.
+    ///
+    /// This is sent when the player clicks a recipe to auto-fill the crafting grid.
+    pub async fn handle_place_recipe(
+        &self,
+        player: &Arc<Player>,
+        packet: SPlaceRecipe,
+    ) {
+        log::debug!(
+            "Place recipe request: window_id={}, recipe={}, make_all={}",
+            packet.window_id,
+            packet.recipe,
+            packet.make_all
+        );
+
+        // TODO: Implement full recipe placement logic
+        // For now, we just acknowledge the request by sending back a ghost recipe
+        // This allows the client to see the recipe in the crafting grid
+        
+        // The client expects us to either:
+        // 1. Send a CPlaceGhostRecipe to show ghost items
+        // 2. Actually move items into the crafting grid and sync inventory
+        
+        // For now, just log it - full implementation requires crafting grid manipulation
+    }
+
+    /// Handles recipe book settings changes from the client.
+    ///
+    /// This is sent when the player opens/closes the recipe book or toggles filtering.
+    pub async fn handle_recipe_book_change_settings(
+        &self,
+        _player: &Arc<Player>,
+        packet: SRecipeBookChangeSettings,
+    ) {
+        // TODO: Store recipe book settings per player if needed
+        log::debug!(
+            "Recipe book settings changed: {:?}, open={}, filter={}",
+            packet.book_type,
+            packet.book_open,
+            packet.filter_active
+        );
+    }
+
+    /// Handles when a player clicks on a recipe in the recipe book.
+    ///
+    /// This is sent when the player clicks a recipe to mark it as seen.
+    pub async fn handle_recipe_book_seen_recipe(
+        &self,
+        _player: &Arc<Player>,
+        packet: SRecipeBookSeenRecipe,
+    ) {
+        // TODO: Mark recipe as seen in player's recipe book data
+        log::debug!("Recipe book seen recipe: {}", packet.recipe_id);
     }
 }
