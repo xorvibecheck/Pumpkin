@@ -39,9 +39,7 @@ impl PlayerAdvancementTracker {
     }
 
     pub fn get_or_create_progress(&mut self, id: &ResourceLocation) -> &mut AdvancementProgress {
-        self.progress
-            .entry(id.clone())
-            .or_insert_with(AdvancementProgress::new)
+        self.progress.entry(id.clone()).or_default()
     }
 
     pub fn grant_criterion(
@@ -50,10 +48,7 @@ impl PlayerAdvancementTracker {
         criterion: &str,
         requirements: &AdvancementRequirements,
     ) -> bool {
-        let progress = self
-            .progress
-            .entry(advancement_id.clone())
-            .or_insert_with(AdvancementProgress::new);
+        let progress = self.progress.entry(advancement_id.clone()).or_default();
 
         if progress.grant_criterion(criterion) {
             progress.update_done(requirements);
@@ -95,10 +90,7 @@ impl PlayerAdvancementTracker {
         advancement_id: &ResourceLocation,
         requirements: &AdvancementRequirements,
     ) -> bool {
-        let progress = self
-            .progress
-            .entry(advancement_id.clone())
-            .or_insert_with(AdvancementProgress::new);
+        let progress = self.progress.entry(advancement_id.clone()).or_default();
 
         let mut changed = false;
 

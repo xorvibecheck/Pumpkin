@@ -33,7 +33,7 @@ impl CommandExecutor for GrantEverythingExecutor {
             let targets = PlayersArgumentConsumer::find_arg(args, ARG_TARGETS)?;
 
             for target in targets {
-                grant_all_advancements(&target).await;
+                grant_all_advancements(target).await;
             }
 
             sender
@@ -69,7 +69,7 @@ impl CommandExecutor for GrantOnlyExecutor {
                     let mut tracker = target.advancement_tracker.lock().await;
                     tracker.grant_advancement(&advancement_id, &adv.advancement.requirements);
                     drop(tracker);
-                    crate::advancement::AdvancementTriggers::send_update(&target, server).await;
+                    crate::advancement::AdvancementTriggers::send_update(target, server).await;
                 }
                 sender
                     .send_message(TextComponent::text(format!(
@@ -113,7 +113,7 @@ impl CommandExecutor for RevokeEverythingExecutor {
                 }
                 tracker.mark_needs_reset();
                 drop(tracker);
-                crate::advancement::AdvancementTriggers::send_update(&target, server).await;
+                crate::advancement::AdvancementTriggers::send_update(target, server).await;
             }
 
             sender
@@ -144,7 +144,7 @@ impl CommandExecutor for RevokeOnlyExecutor {
                 let mut tracker = target.advancement_tracker.lock().await;
                 tracker.revoke_advancement(&advancement_id);
                 drop(tracker);
-                crate::advancement::AdvancementTriggers::send_update(&target, server).await;
+                crate::advancement::AdvancementTriggers::send_update(target, server).await;
             }
 
             sender

@@ -24,10 +24,10 @@ impl AdvancementRegistry {
     pub fn register(&mut self, entry: AdvancementEntry) {
         let id = entry.id.clone();
         let is_root = entry.advancement.is_root();
-        if let Some(ref parent_id) = entry.advancement.parent {
-            if let Some(placed_parent) = self.placed.get_mut(parent_id) {
-                placed_parent.add_child(id.clone());
-            }
+        if let Some(ref parent_id) = entry.advancement.parent
+            && let Some(placed_parent) = self.placed.get_mut(parent_id)
+        {
+            placed_parent.add_child(id.clone());
         }
         let placed = PlacedAdvancement::new(entry.clone());
         self.placed.insert(id.clone(), placed);
@@ -90,6 +90,7 @@ impl AdvancementRegistry {
 // Keep unused helper methods for potential future use
 #[allow(dead_code)]
 impl AdvancementRegistry {
+    #[allow(clippy::too_many_arguments)]
     fn adv(&mut self, id: &str, parent: Option<&str>, icon: &str, title: &str, desc: &str, frame: AdvancementFrame, bg: Option<&str>, x: f32, y: f32, trigger: &ResourceLocation) {
         let adv_id = ResourceLocation::vanilla(id);
         let mut display = AdvancementDisplay::new(
@@ -97,7 +98,7 @@ impl AdvancementRegistry {
             TextComponent::text(title.to_string()),
             TextComponent::text(desc.to_string()),
             frame,
-            bg.map(|b| ResourceLocation::vanilla(b)),
+            bg.map(ResourceLocation::vanilla),
             bg.is_none(),
             bg.is_none(),
             false,
@@ -117,6 +118,7 @@ impl AdvancementRegistry {
         self.register(AdvancementEntry::new(adv_id, advancement));
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn adv_hidden(&mut self, id: &str, parent: &str, icon: &str, title: &str, desc: &str, frame: AdvancementFrame, x: f32, y: f32, trigger: &ResourceLocation) {
         let adv_id = ResourceLocation::vanilla(id);
         let mut display = AdvancementDisplay::new(

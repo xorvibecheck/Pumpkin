@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 use std::collections::HashSet;
 use std::sync::Arc;
 

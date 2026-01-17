@@ -824,16 +824,16 @@ impl LivingEntity {
                 ..Default::default()
             };
 
-            if killed_by_player {
-                if let Some(attacker) = cause {
-                    let attacker_entity = attacker.get_entity();
-                    if let Some(server) = world.server.upgrade() {
-                        for player in server.get_all_players().await {
-                            if player.entity_id() == attacker_entity.entity_id {
-                                let entity_type_id = pumpkin_util::resource_location::ResourceLocation::vanilla(self.entity.entity_type.resource_name);
-                                player.trigger_player_killed_entity(&entity_type_id).await;
-                                break;
-                            }
+            if killed_by_player
+                && let Some(attacker) = cause
+            {
+                let attacker_entity = attacker.get_entity();
+                if let Some(server) = world.server.upgrade() {
+                    for player in server.get_all_players().await {
+                        if player.entity_id() == attacker_entity.entity_id {
+                            let entity_type_id = pumpkin_util::resource_location::ResourceLocation::vanilla(self.entity.entity_type.resource_name);
+                            player.trigger_player_killed_entity(&entity_type_id).await;
+                            break;
                         }
                     }
                 }

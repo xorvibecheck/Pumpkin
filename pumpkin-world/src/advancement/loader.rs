@@ -78,10 +78,21 @@ pub struct RawRewards {
 
 /// Converts a raw advancement JSON into an AdvancementEntry
 pub fn parse_advancement(id: &str, raw: RawAdvancement) -> AdvancementEntry {
-    let adv_id = parse_resource_location(id);
+    // Advancement IDs should be minecraft:category/name format
+    let adv_id = if id.contains(':') {
+        ResourceLocation::from(id)
+    } else {
+        ResourceLocation::vanilla(id)
+    };
     
-    // Parse parent
-    let parent = raw.parent.map(|p| parse_resource_location(&p));
+    // Parse parent - parents in JSON are already in minecraft:category/name format
+    let parent = raw.parent.map(|p| {
+        if p.contains(':') {
+            ResourceLocation::from(&p)
+        } else {
+            ResourceLocation::vanilla(&p)
+        }
+    });
     
     // Parse display
     let display = raw.display.map(parse_display);
@@ -205,6 +216,13 @@ pub fn load_advancement_from_json(id: &str, json: &str) -> Result<AdvancementEnt
 pub fn get_vanilla_advancements() -> Vec<AdvancementEntry> {
     let mut advancements = Vec::with_capacity(125);
     
+    log::info!("Loading vanilla advancements from embedded JSON...");
+    log::info!("Story advancements count: {}", STORY_ADVANCEMENTS.len());
+    log::info!("Nether advancements count: {}", NETHER_ADVANCEMENTS.len());
+    log::info!("End advancements count: {}", END_ADVANCEMENTS.len());
+    log::info!("Adventure advancements count: {}", ADVENTURE_ADVANCEMENTS.len());
+    log::info!("Husbandry advancements count: {}", HUSBANDRY_ADVANCEMENTS.len());
+    
     // Story advancements
     load_category(&mut advancements, "story", STORY_ADVANCEMENTS);
     // Nether advancements  
@@ -215,6 +233,8 @@ pub fn get_vanilla_advancements() -> Vec<AdvancementEntry> {
     load_category(&mut advancements, "adventure", ADVENTURE_ADVANCEMENTS);
     // Husbandry advancements
     load_category(&mut advancements, "husbandry", HUSBANDRY_ADVANCEMENTS);
+    
+    log::info!("Total advancements loaded: {}", advancements.len());
     
     advancements
 }
@@ -235,7 +255,7 @@ fn load_category(advancements: &mut Vec<AdvancementEntry>, category: &str, data:
             }
         }
     }
-    log::debug!("Loaded {} advancements from {} ({} failed)", loaded, category, failed);
+    log::info!("Loaded {} advancements from {} ({} failed)", loaded, category, failed);
 }
 
 // ============================================================================

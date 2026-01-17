@@ -52,9 +52,9 @@ impl<'a> FindArg<'a> for AdvancementArgumentConsumer {
         match args.get(name) {
             Some(Arg::ResourceLocation(s)) => {
                 let resource = if s.contains(':') {
-                    ResourceLocation::from(*s)
+                    ResourceLocation::from(s)
                 } else {
-                    ResourceLocation::vanilla(*s)
+                    ResourceLocation::vanilla(s)
                 };
                 Ok(resource)
             }
