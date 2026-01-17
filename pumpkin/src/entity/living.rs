@@ -16,6 +16,7 @@ use std::{collections::HashMap, sync::atomic::AtomicI32};
 
 use super::{Entity, NBTStorage};
 use super::{EntityBase, NBTStorageInit};
+use crate::block::OnLandedUponArgs;
 use crate::entity::{EntityBaseFuture, NbtFuture};
 use crate::server::Server;
 use crate::world::loot::{LootContextParameters, LootTableExt};
@@ -685,7 +686,7 @@ impl LivingEntity {
         strength
     }
 
-    pub async fn update_fall_distance(
+    pub async fn fall(
         &self,
         caller: Arc<dyn EntityBase>,
         height_difference: f64,
@@ -701,19 +702,21 @@ impl LivingEntity {
             {
                 return;
             }
-
-            let safe_fall_distance = 3.0;
-            let mut damage = fall_distance - safe_fall_distance;
-            damage = damage.ceil();
-
-            // TODO: Play block fall sound
-            if damage > 0.0 {
-                let check_damage = self.damage(&*caller, damage, DamageType::FALL).await; // Fall
-                if check_damage {
-                    self.entity
-                        .play_sound(Self::get_fall_sound(fall_distance as i32))
-                        .await;
-                }
+            let world = &self.entity.world;
+            let block = world
+                .get_block(&self.entity.get_pos_with_y_offset(0.2).await.0)
+                .await;
+            let pumpkin_block = world.block_registry.get_pumpkin_block(block.id);
+            if let Some(pumpkin_block) = pumpkin_block {
+                pumpkin_block
+                    .on_landed_upon(OnLandedUponArgs {
+                        world,
+                        fall_distance,
+                        entity: caller.as_ref(),
+                    })
+                    .await;
+            } else {
+                self.handle_fall_damage(fall_distance, 1.0).await;
             }
         } else if height_difference < 0.0 {
             let new_fall_distance = if !self.is_in_water().await && !self.is_in_powder_snow().await
@@ -723,9 +726,23 @@ impl LivingEntity {
             } else {
                 0f32
             };
-
-            // Reset fall distance if is in water or powder_snow
             self.fall_distance.store(new_fall_distance);
+        }
+    }
+
+    pub async fn handle_fall_damage(&self, fall_distance: f32, damage_per_distance: f32) {
+        // TODO: use attributes
+        let safe_fall_distance = 3.0;
+        let unsafe_fall_distance = fall_distance + 1.0E-6 - safe_fall_distance;
+
+        let damage = (unsafe_fall_distance * damage_per_distance).floor();
+        if damage > 0.0 {
+            let check_damage = self.damage(self, damage, DamageType::FALL).await; // Fall
+            if check_damage {
+                self.entity
+                    .play_sound(Self::get_fall_sound(fall_distance as i32))
+                    .await;
+            }
         }
     }
 

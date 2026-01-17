@@ -325,7 +325,7 @@ impl JavaClient {
 
                 if !player.abilities.lock().await.flying {
                     player.living_entity
-                        .update_fall_distance(
+                        .fall(
                             player.clone(),
                             height_difference,
                             packet.collision & FLAG_ON_GROUND != 0,
@@ -450,7 +450,7 @@ impl JavaClient {
                     .await;
                 if !player.abilities.lock().await.flying {
                     player.living_entity
-                        .update_fall_distance(
+                        .fall(
                             player.clone(),
                             height_difference,
                             (packet.collision & FLAG_ON_GROUND) != 0,

@@ -19,7 +19,7 @@ use crate::generation::proto_chunk::{GenerationCache, TerrainCache};
 use crate::generation::settings::{GenerationSettings, gen_settings_from_dimension};
 use crate::level::{Level, SyncChunk};
 use crate::world::{BlockAccessor, BlockRegistryExt};
-use crate::{GlobalRandomConfig, ProtoChunk, ProtoNoiseRouters};
+use crate::{BlockStateId, GlobalRandomConfig, ProtoChunk, ProtoNoiseRouters};
 use crossbeam::channel::{Receiver, Sender};
 use dashmap::DashMap;
 use itertools::Itertools;
@@ -896,6 +896,13 @@ impl BlockAccessor for Cache {
         position: &'a BlockPos,
     ) -> Pin<Box<dyn Future<Output = &'static BlockState> + Send + 'a>> {
         Box::pin(async move { GenerationCache::get_block_state(self, &position.0).to_state() })
+    }
+
+    fn get_block_state_id<'a>(
+        &'a self,
+        position: &'a BlockPos,
+    ) -> Pin<Box<dyn Future<Output = BlockStateId> + Send + 'a>> {
+        Box::pin(async move { GenerationCache::get_block_state(self, &position.0).0 })
     }
 
     fn get_block_and_state<'a>(

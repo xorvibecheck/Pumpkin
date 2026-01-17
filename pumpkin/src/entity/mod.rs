@@ -1243,7 +1243,7 @@ impl Entity {
 
         if let Some(living) = caller.get_living_entity() {
             living
-                .update_fall_distance(
+                .fall(
                     caller.clone(),
                     final_move.y,
                     self.on_ground.load(Ordering::SeqCst),

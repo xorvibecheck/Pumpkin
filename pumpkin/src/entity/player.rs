@@ -186,40 +186,77 @@ impl ChunkManager {
         level: &Arc<Level>,
     ) {
         view_distance += 1;
-        let mut lock = level.chunk_loading.lock().unwrap();
-        lock.add_ticket(
-            center,
-            ChunkLoading::get_level_from_view_distance(view_distance),
-        );
-        lock.remove_ticket(
-            self.center,
-            ChunkLoading::get_level_from_view_distance(self.view_distance),
-        );
-        lock.send_change();
-        drop(lock);
-        let view_distance = i32::from(view_distance);
-        self.chunk_sent
-            .retain(|pos| (pos.x - center.x).abs().max((pos.y - center.y).abs()) <= view_distance);
+        let old_center = self.center;
+        let old_view_distance = self.view_distance;
+
+        {
+            let mut lock = level.chunk_loading.lock().unwrap();
+            lock.add_ticket(
+                center,
+                ChunkLoading::get_level_from_view_distance(view_distance),
+            );
+
+            if old_center != center || old_view_distance != view_distance {
+                lock.remove_ticket(
+                    old_center,
+                    ChunkLoading::get_level_from_view_distance(old_view_distance),
+                );
+            }
+            lock.send_change();
+        };
+
+        let view_distance_i32 = i32::from(view_distance);
+
+        let mut chunks_to_watch = Vec::new();
+        let mut chunks_to_unwatch = Vec::new();
+
+        for pos in &self.chunk_sent {
+            if (pos.x - center.x).abs().max((pos.y - center.y).abs()) > view_distance_i32 {
+                chunks_to_unwatch.push(*pos);
+            }
+        }
+
+        let level_clone = level.clone();
+        let chunks_to_unwatch_clone = chunks_to_unwatch.clone();
+        tokio::spawn(async move {
+            level_clone
+                .mark_chunks_as_not_watched(&chunks_to_unwatch_clone)
+                .await;
+        });
+
+        self.chunk_sent.retain(|pos| {
+            (pos.x - center.x).abs().max((pos.y - center.y).abs()) <= view_distance_i32
+        });
+
         let mut new_queue = BinaryHeap::with_capacity(self.chunk_queue.len());
         for node in &self.chunk_queue {
             let dst = (node.1.x - center.x).abs().max((node.1.y - center.y).abs());
-            if dst <= view_distance {
+            if dst <= view_distance_i32 {
                 new_queue.push(HeapNode(dst, node.1, node.2.clone()));
             }
         }
+
         self.chunk_queue = new_queue;
         self.center = center;
-        self.view_distance = view_distance as u8;
-        for dx in (-view_distance)..=view_distance {
-            for dy in (-view_distance)..=view_distance {
+        self.view_distance = view_distance;
+
+        for dx in (-view_distance_i32)..=view_distance_i32 {
+            for dy in (-view_distance_i32)..=view_distance_i32 {
                 let new_pos = center.add_raw(dx, dy);
-                if !self.chunk_sent.contains(&new_pos)
-                    && let Some(chunk) = level.loaded_chunks.get(&new_pos)
-                {
-                    self.push_chunk(new_pos, chunk.value().clone());
+                if !self.chunk_sent.contains(&new_pos) {
+                    chunks_to_watch.push(new_pos);
+                    if let Some(chunk) = level.loaded_chunks.get(&new_pos) {
+                        self.push_chunk(new_pos, chunk.value().clone());
+                    }
                 }
             }
         }
+        let level_clone = level.clone();
+        tokio::spawn(async move {
+            level_clone
+                .mark_chunks_as_newly_watched(&chunks_to_watch)
+                .await;
+        });
     }
 
     pub fn clean_up(&mut self, level: &Arc<Level>) {
